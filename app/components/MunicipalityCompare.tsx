@@ -5,6 +5,35 @@ import type { Municipality, ComparisonMetric } from "@/types";
 
 const DEFAULT_MUNICIPALITIES = ["waterloo-on", "kitchener-on"];
 
+function ValueCell({ value, metricKey }: { value: string | null | undefined; metricKey: string }) {
+  if (value == null) {
+    return <span className="text-xs text-gray-300 italic">No data</span>;
+  }
+
+  const lower = value.toLowerCase();
+  const isBoolean = lower === "yes" || lower === "no";
+
+  if (isBoolean) {
+    return lower === "yes" ? (
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+        Yes
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-full">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+        No
+      </span>
+    );
+  }
+
+  // Parking: lower = better (more permissive)
+  const isLowerBetter = metricKey === "min_parking_per_unit" || metricKey === "min_lot_size_sqm";
+  void isLowerBetter; // used for future color coding
+
+  return <span className="text-sm font-semibold text-gray-900">{value}</span>;
+}
+
 export default function MunicipalityCompare() {
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [selected, setSelected] = useState<string[]>(DEFAULT_MUNICIPALITIES);
@@ -48,22 +77,26 @@ export default function MunicipalityCompare() {
 
   return (
     <div>
+      {/* Municipality selector */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          Select municipalities to compare (max 4):
-        </h3>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Select up to 4 municipalities
+        </p>
         <div className="flex flex-wrap gap-2">
           {municipalities.map((m) => (
             <button
               key={m.id}
               onClick={() => toggleMunicipality(m.id)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
                 selected.includes(m.id)
-                  ? "bg-gray-900 text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:border-gray-400"
+                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:text-gray-800"
               }`}
             >
-              {m.name}, {m.province}
+              {m.name}
+              <span className={`ml-1.5 text-xs font-normal ${selected.includes(m.id) ? "text-gray-400" : "text-gray-400"}`}>
+                {m.province}
+              </span>
             </button>
           ))}
           {municipalities.length === 0 && (
@@ -73,60 +106,61 @@ export default function MunicipalityCompare() {
       </div>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 rounded px-3 py-2 mb-4">{error}</div>
+        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+          {error}
+        </div>
       )}
 
       {loading && (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading comparison...</div>
+        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+          <div className="inline-flex gap-1 mb-2">
+            <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+          <p className="text-sm text-gray-400">Loading comparison...</p>
+        </div>
       )}
 
       {metrics && !loading && selected.length >= 2 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 pr-6 font-semibold text-gray-700 w-64">Metric</th>
-                {selectedMunicipalities.map((m) => (
-                  <th key={m.id} className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {m.name}
-                    <span className="block text-xs font-normal text-gray-400">{m.province}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {metrics.map((metric, i) => (
-                <tr
-                  key={metric.label}
-                  className={`border-b border-gray-50 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}
-                >
-                  <td className="py-3 pr-6">
-                    <p className="font-medium text-gray-800">{metric.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{metric.description}</p>
-                  </td>
-                  {selectedMunicipalities.map((m) => {
-                    const value = metric.values[m.id];
-                    return (
-                      <td key={m.id} className="py-3 px-4">
-                        {value != null ? (
-                          <span className="font-medium text-gray-900">{value}</span>
-                        ) : (
-                          <span className="text-gray-300 text-xs">Not indexed</span>
-                        )}
-                      </td>
-                    );
-                  })}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-5 py-3.5 font-semibold text-gray-600 w-60">Metric</th>
+                  {selectedMunicipalities.map((m) => (
+                    <th key={m.id} className="text-left px-5 py-3.5 font-semibold text-gray-900">
+                      {m.name}
+                      <span className="block text-xs font-normal text-gray-400 mt-0.5">{m.province}</span>
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {metrics.map((metric) => (
+                  <tr key={metric.metric_key} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-4">
+                      <p className="font-medium text-gray-800 text-sm">{metric.label}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 leading-snug">{metric.description}</p>
+                    </td>
+                    {selectedMunicipalities.map((m) => (
+                      <td key={m.id} className="px-5 py-4">
+                        <ValueCell value={metric.values[m.id]} metricKey={metric.metric_key} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {selected.length < 2 && !loading && (
-        <p className="text-sm text-gray-400 py-8 text-center">
-          Select at least 2 municipalities to see a comparison.
-        </p>
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+          <p className="text-sm text-gray-400">Select at least 2 municipalities to see a comparison.</p>
+        </div>
       )}
     </div>
   );
