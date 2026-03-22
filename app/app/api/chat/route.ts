@@ -4,7 +4,7 @@ import type { ChatPayload } from "@/types";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = `You are a Canadian municipal zoning expert assistant for the OpenZone Canada platform.
+const SYSTEM_PROMPT = `You are a Canadian municipal zoning expert assistant for the Zoneity Canada platform.
 You help researchers, housing advocates, developers, planners, and journalists understand zoning bylaws
 and land use regulations across Canadian municipalities.
 

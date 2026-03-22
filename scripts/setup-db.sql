@@ -1,4 +1,4 @@
--- OpenZone Canada — database schema
+-- Zoneity Canada — database schema
 -- Run against a fresh Supabase project.
 
 -- Enable vector search

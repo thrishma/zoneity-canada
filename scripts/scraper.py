@@ -82,7 +82,7 @@ MUNICIPALITIES: dict[str, list[dict]] = {
 HEADERS = {
     "User-Agent": (
         "OpenZoneCanada/1.0 (hackathon research project; "
-        "contact: openzone-canada@example.com)"
+        "contact: zoneity-canada@example.com)"
     )
 }
 

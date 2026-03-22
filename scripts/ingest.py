@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-OpenZone Canada — PDF ingestion pipeline.
+Zoneity Canada — PDF ingestion pipeline.
 
 Downloads, extracts, parses, embeds, and inserts bylaw documents into Supabase.
 
@@ -243,7 +243,7 @@ def extract_metrics(
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ingest bylaw PDFs into OpenZone Canada DB")
+    parser = argparse.ArgumentParser(description="Ingest bylaw PDFs into Zoneity Canada DB")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--document-id", help="UUID of a bylaw_documents row to ingest")
     group.add_argument("--all", action="store_true", help="Ingest all registered documents")

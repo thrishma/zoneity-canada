@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OpenZone Canada — National Zoning Data Platform",
+  title: "Zoneity Canada — National Zoning Data Platform",
   description:
     "Searchable, comparable zoning bylaws and land use regulations across Canadian municipalities.",
 };
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-gray-200 bg-white px-6 py-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">OpenZone Canada</h1>
+              <h1 className="text-xl font-bold tracking-tight">Zoneity Canada</h1>
               <p className="text-xs text-gray-500 mt-0.5">
                 National Zoning &amp; Land Use Data Platform
               </p>
