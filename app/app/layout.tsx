@@ -22,7 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="flex items-center gap-6 text-sm font-medium text-gray-600">
               <a href="/" className="hover:text-gray-900">Search</a>
               <a href="/compare" className="hover:text-gray-900">Compare</a>
-              <a href="/api/bylaws/municipalities" className="hover:text-gray-900">API</a>
+              <a href="/map" className="hover:text-gray-900">Map</a>
+              <a href="/docs" className="hover:text-gray-900">API Docs</a>
+              <a href="/api/bylaws/export?format=csv" className="hover:text-gray-900 text-blue-600">Export CSV</a>
             </nav>
           </div>
         </header>
