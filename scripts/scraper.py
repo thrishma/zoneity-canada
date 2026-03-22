@@ -44,37 +44,51 @@ MUNICIPALITIES: dict[str, list[dict]] = {
     "waterloo-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.waterloo.ca/en/business/zoning-bylaw.aspx",
-            "pdf_pattern": ["zoning", "bylaw"],
-            "title_hint": "City of Waterloo Zoning By-law",
+            "landing_url": "https://www.waterloo.ca/en/government/zoning-bylaw.aspx",
+            "pdf_pattern": ["zoning", "by-law"],
+            "title_hint": "City of Waterloo Zoning By-law 2018-050",
+            # Fallback direct URL if pattern matching fails
+            "direct_pdf_url": "https://www.waterloo.ca/media/ybpnbhdm/zoning-by-law-2018-050.pdf",
         },
         {
             "bylaw_type": "official_plan",
             "landing_url": "https://www.waterloo.ca/en/government/official-plan.aspx",
             "pdf_pattern": ["official", "plan"],
             "title_hint": "City of Waterloo Official Plan",
+            "direct_pdf_url": "https://www.waterloo.ca/media/kq3nhow4/city-waterloo-official-plan.pdf",
         },
     ],
     "kitchener-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.kitchener.ca/en/city-services/zoning-bylaw-2019-051.aspx",
-            "pdf_pattern": ["zoning", "bylaw", "2019"],
+            "landing_url": "https://www.kitchener.ca/development-and-construction/zoning/zoning-bylaw/",
+            "pdf_pattern": ["crozby", "signed"],
             "title_hint": "City of Kitchener Zoning By-law 2019-051",
+            # 74MB consolidated bylaw — direct URL since PDFs aren't linked on the landing page
+            "direct_pdf_url": "https://www.kitchener.ca/media/fcwplpb2/dsd_plan_crozby_signed_by-law.pdf",
         },
         {
             "bylaw_type": "official_plan",
-            "landing_url": "https://www.kitchener.ca/en/city-services/official-plan.aspx",
-            "pdf_pattern": ["official", "plan"],
+            "landing_url": "https://www.kitchener.ca/development-and-construction/official-plan/",
+            "pdf_pattern": ["official_plan", "2014"],
             "title_hint": "City of Kitchener Official Plan",
+            "direct_pdf_url": "https://www.kitchener.ca/media/xxanre4z/dsd_plan_city_of_kitchener_official_plan_2014.pdf",
         },
     ],
     "thunder-bay-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.thunderbay.ca/en/city-services/zoning.aspx",
-            "pdf_pattern": ["zoning"],
-            "title_hint": "City of Thunder Bay Zoning By-law",
+            "landing_url": "https://www.thunderbay.ca/en/business/find-zoning-and-property-information.aspx",
+            "pdf_pattern": ["zoning", "by-law", "1-2022"],
+            "title_hint": "City of Thunder Bay Zoning By-law 1-2022",
+            "direct_pdf_url": "https://www.thunderbay.ca/en/business/resources/Documents/Building-and-Planning/Zoning/Zoning-By-law-1-2022---Accessible---Office-Consolidation-to-May-27-2024.pdf",
+        },
+        {
+            "bylaw_type": "official_plan",
+            "landing_url": "https://www.thunderbay.ca/en/business/find-zoning-and-property-information.aspx",
+            "pdf_pattern": ["official", "plan"],
+            "title_hint": "City of Thunder Bay Official Plan",
+            "direct_pdf_url": "https://www.thunderbay.ca/en/business/resources/Documents/Building-and-Planning/Official-Plan/Official-Plan---Amended-August-26-2024.pdf",
         },
     ],
 }
@@ -213,13 +227,17 @@ def scrape_municipality(
 
         pdf_urls = find_pdf_links(resp.text, entry["landing_url"], entry["pdf_pattern"])
         if not pdf_urls:
-            print(f"  Warning: no PDF links found matching {entry['pdf_pattern']}")
-            continue
+            if entry.get("direct_pdf_url"):
+                print(f"  No pattern match — using direct_pdf_url")
+                pdf_urls = [entry["direct_pdf_url"]]
+            else:
+                print(f"  Warning: no PDF links found matching {entry['pdf_pattern']}")
+                continue
 
         print(f"  Found {len(pdf_urls)} PDF candidate(s): {pdf_urls[:3]}")
 
-        # Download the first (most prominent) match
-        pdf_url = pdf_urls[0]
+        # Prefer direct_pdf_url if specified (avoids stale pattern matches)
+        pdf_url = entry.get("direct_pdf_url") or pdf_urls[0]
         filename = Path(urlparse(pdf_url).path).name or "bylaw.pdf"
         dest = DOWNLOAD_DIR / municipality_id / entry["bylaw_type"] / filename
 
