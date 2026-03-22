@@ -64,6 +64,7 @@ export interface BylawSearchResult {
 // ── Comparison ────────────────────────────────────────────────────────────────
 
 export interface ComparisonMetric {
+  metric_key: string;
   label: string;
   description: string;
   values: Record<string, string | null>; // municipality_id → value

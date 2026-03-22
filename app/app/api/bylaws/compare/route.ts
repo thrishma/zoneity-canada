@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
     }
 
     const metrics: ComparisonMetric[] = METRIC_QUERIES.map((m) => ({
+      metric_key: m.key,
       label: m.label,
       description: m.description,
       values: Object.fromEntries(

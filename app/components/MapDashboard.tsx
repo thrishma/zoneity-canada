@@ -96,32 +96,39 @@ export default function MapDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/bylaws/municipalities").then((r) => r.json()),
-      fetch("/api/bylaws/compare?id=waterloo-on&id=kitchener-on&id=thunder-bay-on").then((r) => r.json()),
-    ]).then(([mData, cData]) => {
-      const metricsMap: Record<string, Record<string, string | null>> = {};
-      for (const m of mData.municipalities ?? []) {
-        metricsMap[m.id] = {};
-      }
-      for (const metric of cData.metrics ?? []) {
-        for (const [mId, val] of Object.entries(metric.values ?? {})) {
-          if (!metricsMap[mId]) metricsMap[mId] = {};
-          metricsMap[mId][metric.metric_key ?? metric.label] = val as string | null;
-        }
-      }
+    fetch("/api/bylaws/municipalities")
+      .then((r) => r.json())
+      .then(async (mData) => {
+        const allIds: string[] = (mData.municipalities ?? []).map(
+          (m: { id: string }) => m.id
+        );
 
-      const result: MunicipalityMetrics[] = (mData.municipalities ?? []).map(
-        (m: { id: string; name: string; province: string; population: number }) => ({
-          ...m,
-          metrics: metricsMap[m.id] ?? {},
-          lat: COORDS[m.id]?.[0],
-          lng: COORDS[m.id]?.[1],
-        })
-      );
-      setMunicipalities(result);
-      setLoading(false);
-    });
+        // Fetch compare data for all municipalities (at least 2 needed)
+        const metricsMap: Record<string, Record<string, string | null>> = {};
+        for (const m of mData.municipalities ?? []) metricsMap[m.id] = {};
+
+        if (allIds.length >= 2) {
+          const qs = allIds.map((id) => `id=${encodeURIComponent(id)}`).join("&");
+          const cData = await fetch(`/api/bylaws/compare?${qs}`).then((r) => r.json());
+          for (const metric of cData.metrics ?? []) {
+            for (const [mId, val] of Object.entries(metric.values ?? {})) {
+              if (!metricsMap[mId]) metricsMap[mId] = {};
+              metricsMap[mId][metric.metric_key] = val as string | null;
+            }
+          }
+        }
+
+        const result: MunicipalityMetrics[] = (mData.municipalities ?? []).map(
+          (m: { id: string; name: string; province: string; population: number }) => ({
+            ...m,
+            metrics: metricsMap[m.id] ?? {},
+            lat: COORDS[m.id]?.[0],
+            lng: COORDS[m.id]?.[1],
+          })
+        );
+        setMunicipalities(result);
+        setLoading(false);
+      });
   }, []);
 
   const W = 800;
