@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
       // Execute tool calls
       for (const tc of choice.message.tool_calls) {
-        if (tc.function.name !== "search_bylaws") continue;
+        if (!("function" in tc) || tc.function.name !== "search_bylaws") continue;
 
         let args: { query: string; municipality_id?: string; bylaw_type?: string; limit?: number };
         try {

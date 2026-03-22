@@ -6,6 +6,10 @@ export interface Municipality {
   province: string;
   population?: number;
   website?: string;
+  lat?: number;
+  lng?: number;
+  region?: string;
+  document_count?: number;
 }
 
 // ── Bylaw document ────────────────────────────────────────────────────────────

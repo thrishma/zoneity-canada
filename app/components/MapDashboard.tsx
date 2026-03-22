@@ -12,29 +12,6 @@ interface MunicipalityMetrics {
   lng?: number;
 }
 
-// Known coordinates for seeded municipalities
-const COORDS: Record<string, [number, number]> = {
-  "waterloo-on": [43.4668, -80.5164],
-  "kitchener-on": [43.4516, -80.4925],
-  "thunder-bay-on": [48.3809, -89.2477],
-  "cambridge-on": [43.3601, -80.3123],
-  "guelph-on": [43.5448, -80.2482],
-  "hamilton-on": [43.2557, -79.8711],
-  "london-on": [42.9849, -81.2453],
-  "windsor-on": [42.3149, -83.0364],
-  "ottawa-on": [45.4215, -75.6972],
-  "brampton-on": [43.7315, -79.7624],
-  "mississauga-on": [43.5890, -79.6441],
-  "markham-on": [43.8561, -79.3370],
-  "vaughan-on": [43.8361, -79.4983],
-  "barrie-on": [44.3894, -79.6903],
-  "kingston-on": [44.2312, -76.4860],
-  "sudbury-on": [46.4917, -80.9930],
-  "burlington-on": [43.3255, -79.7990],
-  "oshawa-on": [43.8971, -78.8658],
-  "richmond-hill-on": [43.8828, -79.4403],
-  "oakville-on": [43.4675, -79.6877],
-};
 
 const METRICS = [
   { key: "min_lot_size_sqm", label: "Min Lot Size (sqm)", unit: "sqm", type: "numeric" as const },
@@ -119,11 +96,9 @@ export default function MapDashboard() {
         }
 
         const result: MunicipalityMetrics[] = (mData.municipalities ?? []).map(
-          (m: { id: string; name: string; province: string; population: number }) => ({
+          (m: { id: string; name: string; province: string; population: number; lat?: number; lng?: number }) => ({
             ...m,
             metrics: metricsMap[m.id] ?? {},
-            lat: COORDS[m.id]?.[0],
-            lng: COORDS[m.id]?.[1],
           })
         );
         setMunicipalities(result);

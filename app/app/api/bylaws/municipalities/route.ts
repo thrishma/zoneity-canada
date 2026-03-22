@@ -15,6 +15,9 @@ export async function GET() {
           m.province,
           m.population,
           m.website,
+          m.lat,
+          m.lng,
+          m.region,
           COUNT(d.id)::int AS document_count
         FROM municipalities m
         LEFT JOIN bylaw_documents d ON d.municipality_id = m.id

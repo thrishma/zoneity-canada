@@ -24,8 +24,7 @@ export function bylawTypeLabel(type: string): string {
 }
 
 export function sectionIdForResult(r: BylawSearchResult | BylawSection): string {
-  const municipalityId = "municipality_id" in r ? r.municipality_id : r.municipality_id;
   const chapter = "chapter" in r ? r.chapter : null;
-  const key = `${municipalityId}::${chapter ?? -1}`;
+  const key = `${r.municipality_id}::${chapter ?? -1}`;
   return `bylaw-ch-${encodeURIComponent(key)}`;
 }
