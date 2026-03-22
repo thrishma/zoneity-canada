@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
@@ -21,126 +21,155 @@ RULES:
 
 CITATION FORMAT: *(City of [Municipality], [Bylaw Name], s.[X.X])*`;
 
+function encode(obj: Record<string, string>) {
+  return `data: ${JSON.stringify(obj)}\n\n`;
+}
+
 export async function POST(req: NextRequest) {
-  try {
-    const body: ChatPayload = await req.json();
-    const { question, municipalityId, municipalityName } = body;
+  const body: ChatPayload = await req.json();
+  const { question, municipalityId, municipalityName } = body;
 
-    if (!question?.trim()) {
-      return NextResponse.json({ error: "question is required" }, { status: 400 });
-    }
-
-    const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-    const municipalityContext = municipalityName
-      ? `\n\nActive municipality filter: **${municipalityName}** (id: ${municipalityId ?? "unknown"}). Focus answers on this municipality unless the user asks to compare others.`
-      : "";
-
-    // ── LangChain tools ────────────────────────────────────────────────────────
-
-    const getStructuredMetrics = tool(
-      async ({ municipality_ids }: { municipality_ids: string[] }) => {
-        const ids = municipality_ids.includes("all")
-          ? await fetch(`${base}/api/bylaws/municipalities`)
-              .then((r) => r.json())
-              .then((d: { municipalities?: { id: string }[] }) =>
-                (d.municipalities ?? []).map((m) => m.id)
-              )
-          : municipality_ids;
-
-        const qs = ids.map((id: string) => `id=${encodeURIComponent(id)}`).join("&");
-        const data = await fetch(`${base}/api/bylaws/compare?${qs}`).then((r) => r.json()) as {
-          metrics?: unknown[];
-        };
-        return JSON.stringify(data.metrics ?? []);
-      },
-      {
-        name: "get_structured_metrics",
-        description:
-          "Get structured zoning metrics (min lot size, max height, parking, density, secondary suites, multiplexes) for one or more municipalities. Use this FIRST when asked about specific regulation values or comparisons.",
-        schema: z.object({
-          municipality_ids: z
-            .array(z.string())
-            .describe(
-              "List of municipality IDs e.g. ['waterloo-on', 'kitchener-on']. Use ['all'] to get all indexed municipalities."
-            ),
-        }),
-      }
-    );
-
-    const searchBylaws = tool(
-      async ({
-        query,
-        municipality_id,
-        bylaw_type,
-        limit,
-      }: {
-        query: string;
-        municipality_id?: string;
-        bylaw_type?: string;
-        limit?: number;
-      }) => {
-        const params = new URLSearchParams({ q: query });
-        if (municipality_id) params.set("municipality", municipality_id);
-        if (bylaw_type) params.set("type", bylaw_type);
-        if (limit) params.set("limit", String(limit));
-
-        const data = await fetch(`${base}/api/bylaws/search?${params}`).then((r) => r.json()) as {
-          results?: unknown[];
-        };
-        return JSON.stringify(data.results ?? []);
-      },
-      {
-        name: "search_bylaws",
-        description:
-          "Semantic search across ingested bylaw sections. Use for specific clause text, conditions, or regulations not covered by structured metrics.",
-        schema: z.object({
-          query: z.string().describe("Plain-English search query"),
-          municipality_id: z
-            .string()
-            .optional()
-            .describe("Filter to a specific municipality id"),
-          bylaw_type: z
-            .enum(["zoning_bylaw", "official_plan", "parking_bylaw", "site_plan_bylaw"])
-            .optional()
-            .describe("Filter by document type"),
-          limit: z.number().optional().describe("Number of results (default 6, max 12)"),
-        }),
-      }
-    );
-
-    // ── LangChain agent ────────────────────────────────────────────────────────
-
-    const llm = new ChatOpenAI({
-      model: "gpt-4o",
-      temperature: 0,
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    const prompt = ChatPromptTemplate.fromMessages([
-      ["system", SYSTEM_PROMPT + municipalityContext],
-      ["human", "{input}"],
-      new MessagesPlaceholder("agent_scratchpad"),
-    ]);
-
-    const agent = await createOpenAIToolsAgent({
-      llm,
-      tools: [getStructuredMetrics, searchBylaws],
-      prompt,
-    });
-
-    const executor = new AgentExecutor({
-      agent,
-      tools: [getStructuredMetrics, searchBylaws],
-      maxIterations: 4,
-      returnIntermediateSteps: false,
-    });
-
-    const result = await executor.invoke({ input: question });
-
-    return NextResponse.json({ answer: result.output ?? "" });
-  } catch (err) {
-    console.error("[chat/langchain]", err);
-    return NextResponse.json({ error: "Chat failed" }, { status: 500 });
+  if (!question?.trim()) {
+    return new Response(JSON.stringify({ error: "question is required" }), { status: 400 });
   }
+
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  const municipalityContext = municipalityName
+    ? `\n\nActive municipality filter: **${municipalityName}** (id: ${municipalityId ?? "unknown"}).`
+    : "";
+
+  const getStructuredMetrics = tool(
+    async ({ municipality_ids }: { municipality_ids: string[] }) => {
+      const ids = municipality_ids.includes("all")
+        ? await fetch(`${base}/api/bylaws/municipalities`)
+            .then((r) => r.json())
+            .then((d: { municipalities?: { id: string }[] }) =>
+              (d.municipalities ?? []).map((m) => m.id)
+            )
+        : municipality_ids;
+
+      const qs = ids.map((id: string) => `id=${encodeURIComponent(id)}`).join("&");
+      const data = await fetch(`${base}/api/bylaws/compare?${qs}`).then((r) => r.json()) as {
+        metrics?: unknown[];
+      };
+      return JSON.stringify(data.metrics ?? []);
+    },
+    {
+      name: "get_structured_metrics",
+      description:
+        "Get structured zoning metrics for one or more municipalities. Use this FIRST for regulation values or comparisons.",
+      schema: z.object({
+        municipality_ids: z.array(z.string()).describe(
+          "Municipality IDs e.g. ['waterloo-on', 'kitchener-on']. Use ['all'] for all municipalities."
+        ),
+      }),
+    }
+  );
+
+  const searchBylaws = tool(
+    async ({ query, municipality_id, bylaw_type, limit }: {
+      query: string;
+      municipality_id?: string;
+      bylaw_type?: string;
+      limit?: number;
+    }) => {
+      const params = new URLSearchParams({ q: query });
+      if (municipality_id) params.set("municipality", municipality_id);
+      if (bylaw_type) params.set("type", bylaw_type);
+      if (limit) params.set("limit", String(limit));
+      const data = await fetch(`${base}/api/bylaws/search?${params}`).then((r) => r.json()) as {
+        results?: unknown[];
+      };
+      return JSON.stringify(data.results ?? []);
+    },
+    {
+      name: "search_bylaws",
+      description:
+        "Semantic search across ingested bylaw sections for specific clause text, conditions, or exceptions.",
+      schema: z.object({
+        query: z.string().describe("Plain-English search query"),
+        municipality_id: z.string().optional(),
+        bylaw_type: z
+          .enum(["zoning_bylaw", "official_plan", "parking_bylaw", "site_plan_bylaw"])
+          .optional(),
+        limit: z.number().optional(),
+      }),
+    }
+  );
+
+  const llm = new ChatOpenAI({
+    model: "gpt-4o",
+    temperature: 0,
+    apiKey: process.env.OPENAI_API_KEY,
+    streaming: true,
+  });
+
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", SYSTEM_PROMPT + municipalityContext],
+    ["human", "{input}"],
+    new MessagesPlaceholder("agent_scratchpad"),
+  ]);
+
+  const agent = await createOpenAIToolsAgent({
+    llm,
+    tools: [getStructuredMetrics, searchBylaws],
+    prompt,
+  });
+
+  const executor = new AgentExecutor({
+    agent,
+    tools: [getStructuredMetrics, searchBylaws],
+    maxIterations: 4,
+  });
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const eventStream = executor.streamEvents(
+          { input: question },
+          { version: "v2" }
+        );
+
+        for await (const event of eventStream) {
+          // Tool call status — show the user what the agent is doing
+          if (event.event === "on_tool_start") {
+            const toolName = event.name === "get_structured_metrics"
+              ? "Fetching zoning metrics..."
+              : "Searching bylaws...";
+            controller.enqueue(encode({ type: "status", content: toolName }));
+          }
+
+          // Stream LLM tokens for the final answer only (not tool calls)
+          if (
+            event.event === "on_chat_model_stream" &&
+            event.data?.chunk?.content &&
+            event.tags?.includes("seq:step:2")
+          ) {
+            const token = typeof event.data.chunk.content === "string"
+              ? event.data.chunk.content
+              : event.data.chunk.content[0]?.text ?? "";
+            if (token) {
+              controller.enqueue(encode({ type: "token", content: token }));
+            }
+          }
+        }
+
+        controller.enqueue(encode({ type: "done", content: "" }));
+      } catch (err) {
+        console.error("[chat/stream]", err);
+        controller.enqueue(encode({ type: "error", content: "Stream failed" }));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }

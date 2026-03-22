@@ -32,6 +32,7 @@ function SearchResultCard({ result }: { result: BylawSearchResult }) {
     if (chatLoading) return;
     setChatLoading(true);
     setShowChat(true);
+    setChatAnswer(null);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -42,8 +43,26 @@ function SearchResultCard({ result }: { result: BylawSearchResult }) {
           municipalityName: result.municipality_name,
         }),
       });
-      const data = await res.json() as { answer?: string };
-      setChatAnswer(data.answer ?? "No answer returned.");
+
+      if (!res.body) throw new Error("No stream");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value, { stream: true }).split("\n").filter((l) => l.startsWith("data: "));
+        for (const line of lines) {
+          try {
+            const payload = JSON.parse(line.slice(6)) as { type: string; content: string };
+            if (payload.type === "token") {
+              accumulated += payload.content;
+              setChatAnswer(accumulated);
+            }
+          } catch { /* skip */ }
+        }
+      }
     } catch {
       setChatAnswer("Failed to load explanation.");
     } finally {
@@ -103,14 +122,17 @@ function SearchResultCard({ result }: { result: BylawSearchResult }) {
       {/* AI Explanation */}
       {showChat && (
         <div className="mt-4 pt-4 border-t border-gray-100">
-          {chatLoading ? (
+          {!chatAnswer && chatLoading ? (
             <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
               Analysing regulation...
             </div>
           ) : (
             <div className="prose prose-sm prose-gray max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatAnswer ?? ""}</ReactMarkdown>
+              {chatLoading && (
+                <span className="inline-block w-0.5 h-3.5 bg-blue-500 animate-pulse ml-0.5 align-middle" />
+              )}
             </div>
           )}
         </div>
@@ -125,6 +147,7 @@ export default function BylawSearch() {
 
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatAnswer, setChatAnswer] = useState<string | null>(null);
+  const [chatStatus, setChatStatus] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"search" | "ask">("search");
 
@@ -132,18 +155,56 @@ export default function BylawSearch() {
     if (!chatQuestion.trim() || chatLoading) return;
     setChatLoading(true);
     setChatAnswer(null);
+    setChatStatus(null);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: chatQuestion }),
       });
-      const data = await res.json() as { answer?: string };
-      setChatAnswer(data.answer ?? "No answer returned.");
+
+      if (!res.body) throw new Error("No stream");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+
+        for (const line of lines) {
+          try {
+            const payload = JSON.parse(line.slice(6)) as {
+              type: "token" | "status" | "done" | "error";
+              content: string;
+            };
+
+            if (payload.type === "status") {
+              setChatStatus(payload.content);
+            } else if (payload.type === "token") {
+              accumulated += payload.content;
+              setChatAnswer(accumulated);
+              setChatStatus(null);
+            } else if (payload.type === "done") {
+              setChatStatus(null);
+            } else if (payload.type === "error") {
+              setChatAnswer("Something went wrong. Please try again.");
+            }
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
     } catch {
-      setChatAnswer("Failed. Please try again.");
+      setChatAnswer("Failed to connect. Please try again.");
     } finally {
       setChatLoading(false);
+      setChatStatus(null);
     }
   }
 
@@ -274,30 +335,38 @@ export default function BylawSearch() {
             </div>
           </div>
 
-          {chatLoading && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-              <div className="flex items-center gap-3 text-sm text-gray-400">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-                Searching bylaws and generating answer...
-              </div>
-            </div>
-          )}
-
-          {chatAnswer && !chatLoading && (
+          {(chatLoading || chatAnswer) && (
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className={`w-2 h-2 rounded-full bg-blue-500 ${chatLoading ? "animate-pulse" : ""}`} />
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                   AI Answer
                 </span>
+                {chatStatus && (
+                  <span className="ml-auto text-xs text-blue-500 font-medium animate-pulse">
+                    {chatStatus}
+                  </span>
+                )}
               </div>
-              <div className="prose prose-sm prose-gray max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatAnswer}</ReactMarkdown>
-              </div>
+
+              {/* Streaming answer builds up in real time */}
+              {chatAnswer ? (
+                <div className="prose prose-sm prose-gray max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatAnswer}</ReactMarkdown>
+                  {chatLoading && (
+                    <span className="inline-block w-0.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle" />
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                  {chatStatus ?? "Thinking..."}
+                </div>
+              )}
             </div>
           )}
 
