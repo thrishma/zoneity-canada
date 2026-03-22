@@ -6,7 +6,8 @@ Downloads, extracts, parses, embeds, and inserts bylaw documents into Supabase.
 
 Usage:
     python3 scripts/ingest.py --document-id <uuid>
-    python3 scripts/ingest.py --all          # ingest all pending documents
+    python3 scripts/ingest.py --all              # ingest all registered documents
+    python3 scripts/ingest.py --submission-id <uuid>  # ingest a community submission
 """
 
 import argparse
@@ -392,11 +393,96 @@ def extract_metrics(
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+def ingest_from_submission(conn: "psycopg2.connection", submission_id: str) -> None:
+    """
+    Ingests a community-submitted bylaw URL.
+
+    Flow:
+      1. Read bylaw_submissions row
+      2. Resolve or create municipality record
+      3. Create bylaw_documents row (or reuse existing for same URL)
+      4. Run full ingest + metric extraction pipeline
+      5. Mark submission as ingested
+    """
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            "SELECT * FROM bylaw_submissions WHERE id = %s",
+            (submission_id,),
+        )
+        sub = cur.fetchone()
+
+    if not sub:
+        print(f"Submission {submission_id} not found", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"\nIngesting submission: {sub['title']} ({sub['municipality_name']}, {sub['province']})")
+    print(f"  URL: {sub['source_url']}")
+
+    # Resolve municipality — use existing ID if provided, otherwise upsert by name
+    municipality_id = sub.get("municipality_id")
+    if not municipality_id:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO municipalities (id, name, province)
+                VALUES (gen_random_uuid(), %s, %s)
+                ON CONFLICT (name, province) DO UPDATE SET name = EXCLUDED.name
+                RETURNING id
+                """,
+                (sub["municipality_name"], sub["province"].upper()),
+            )
+            row = cur.fetchone()
+            municipality_id = row[0]
+            conn.commit()
+        print(f"  Municipality ID: {municipality_id} (upserted)")
+
+    # Create bylaw_documents row, reuse if URL already exists
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO bylaw_documents
+              (municipality_id, bylaw_type, title, source_url, status)
+            VALUES (%s, %s, %s, %s, 'active')
+            ON CONFLICT (source_url) DO UPDATE
+              SET title = EXCLUDED.title, updated_at = NOW()
+            RETURNING id
+            """,
+            (
+                municipality_id,
+                sub["bylaw_type"],
+                sub["title"],
+                sub["source_url"],
+            ),
+        )
+        doc_row = cur.fetchone()
+        document_id = str(doc_row[0])
+        conn.commit()
+    print(f"  Document ID: {document_id}")
+
+    count = ingest_document(conn, document_id)
+    if count > 0:
+        extract_metrics(conn, municipality_id, document_id)
+
+    # Mark submission as ingested
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE bylaw_submissions
+            SET status = 'ingested', ingested_at = NOW()
+            WHERE id = %s
+            """,
+            (submission_id,),
+        )
+    conn.commit()
+    print(f"  Submission {submission_id} marked as ingested")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ingest bylaw PDFs into Zoneity Canada DB")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--document-id", help="UUID of a bylaw_documents row to ingest")
     group.add_argument("--all", action="store_true", help="Ingest all registered documents")
+    group.add_argument("--submission-id", help="UUID of a bylaw_submissions row to ingest")
     parser.add_argument("--skip-metrics", action="store_true", help="Skip metric extraction")
     args = parser.parse_args()
 
@@ -406,7 +492,9 @@ def main() -> None:
 
     conn = psycopg2.connect(DB_URL)
 
-    if args.all:
+    if args.submission_id:
+        ingest_from_submission(conn, args.submission_id)
+    elif args.all:
         with conn.cursor() as cur:
             cur.execute("SELECT id, municipality_id FROM bylaw_documents ORDER BY ingested_at")
             docs = cur.fetchall()

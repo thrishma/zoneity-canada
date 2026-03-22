@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="/submit" className="hover:text-gray-900">Submit</a>
               <a href="/docs" className="hover:text-gray-900">API Docs</a>
               <a href="/api/bylaws/export?format=csv" className="hover:text-gray-900 text-blue-600">Export CSV</a>
+              <a href="/admin/submissions" className="hover:text-gray-900 text-gray-400 text-xs">Admin</a>
             </nav>
           </div>
         </header>

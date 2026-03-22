@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const BYLAW_TYPES = [
   "zoning_bylaw",
@@ -36,6 +37,15 @@ export async function GET() {
 
 /** POST /api/bylaws/submit — community bylaw contribution */
 export async function POST(req: NextRequest) {
+  // Rate limit: 3 submissions per IP per hour
+  const ip = getClientIp(req);
+  if (!checkRateLimit(`submit:${ip}`, 3, 60 * 60 * 1000)) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please try again in an hour." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body: unknown = await req.json();
     if (typeof body !== "object" || body === null) {
@@ -127,6 +137,16 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
+    // Unique constraint on source_url — duplicate submission
+    if (
+      err instanceof Error &&
+      err.message.includes("unique_submission_source_url")
+    ) {
+      return NextResponse.json(
+        { error: "This URL has already been submitted. Thank you!" },
+        { status: 409 }
+      );
+    }
     console.error("[submit POST]", err);
     return NextResponse.json({ error: "Submission failed. Please try again." }, { status: 500 });
   }
