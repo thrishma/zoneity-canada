@@ -2,31 +2,35 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Zoneity Canada — National Zoning Data Platform",
+  title: "Zoneity Canada — National Zoning Intelligence Engine",
   description:
-    "Searchable, comparable zoning bylaws and land use regulations across Canadian municipalities.",
+    "AI-powered search across Canadian municipal zoning bylaws, official plans, and land use regulations.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
-        <header className="border-b border-gray-200 bg-white px-6 py-4">
+        <header className="bg-gray-950 text-white px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">Zoneity Canada</h1>
-              <p className="text-xs text-gray-500 mt-0.5">
-                National Zoning &amp; Land Use Data Platform
-              </p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-white">Zoneity Canada</h1>
+                <p className="text-xs text-gray-400 mt-0">Zoning Intelligence Engine</p>
+              </div>
             </div>
-            <nav className="flex items-center gap-6 text-sm font-medium text-gray-600">
-              <a href="/" className="hover:text-gray-900">Search</a>
-              <a href="/compare" className="hover:text-gray-900">Compare</a>
-              <a href="/map" className="hover:text-gray-900">Map</a>
-              <a href="/submit" className="hover:text-gray-900">Submit</a>
-              <a href="/docs" className="hover:text-gray-900">API Docs</a>
-              <a href="/api/bylaws/export?format=csv" className="hover:text-gray-900 text-blue-600">Export CSV</a>
-              <a href="/admin/submissions" className="hover:text-gray-900 text-gray-400 text-xs">Admin</a>
+            <nav className="flex items-center gap-6 text-sm font-medium text-gray-300">
+              <a href="/" className="hover:text-white transition-colors">Search</a>
+              <a href="/compare" className="hover:text-white transition-colors">Compare</a>
+              <a href="/map" className="hover:text-white transition-colors">Map</a>
+              <a href="/submit" className="hover:text-white transition-colors">Submit</a>
+              <a href="/docs" className="hover:text-white transition-colors">API</a>
+              <a
+                href="/api/bylaws/export?format=csv"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors"
+              >
+                Export CSV
+              </a>
             </nav>
           </div>
         </header>
