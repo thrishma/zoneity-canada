@@ -19,15 +19,15 @@ from typing import Optional
 
 # ── Regex patterns for Ontario bylaw structure ────────────────────────────────
 
-# "PART 1 - GENERAL PROVISIONS" or "PART I — ADMINISTRATION"
+# "PART 1 - GENERAL PROVISIONS" or "PART I — ADMINISTRATION" or "PART A: INTRODUCTION"
 PART_RE = re.compile(
-    r"^PART\s+(\d+|[IVXLC]+)\s*[-—–]\s*(.{3,100})$",
+    r"^PART\s+(\d+|[IVXLC]+|[A-Z])\s*[-—–:]\s*(.{3,100})$",
     re.IGNORECASE,
 )
 
-# "Section 4.2" or "4.2" or "4.2.3" at the start of a heading block
+# "Section 4.2" or "4.2" or "4.2.3" or "1.A.1" or "1.A" (official plan alpha-numeric sections)
 SECTION_RE = re.compile(
-    r"^(?:Section\s+)?(\d+(?:\.\d+){1,3})\s+(.*)",
+    r"^(?:Section\s+)?(\d+(?:[.\-][A-Za-z\d]+){1,3})\s+(.*)",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -47,12 +47,16 @@ def _part_to_int(raw: str) -> int:
     return _ROMAN.get(raw, 0)
 
 
-def _section_key(section: str) -> tuple[int, ...]:
-    """Convert "4.2.3" to (4, 2, 3) for sorting / comparison."""
-    try:
-        return tuple(int(p) for p in section.split("."))
-    except ValueError:
-        return (0,)
+def _section_key(section: str) -> tuple:
+    """Convert "4.2.3" → (4,2,3) or "1.A.2" → (1,"A",2) for depth comparison."""
+    parts = re.split(r"[.\-]", section)
+    result = []
+    for p in parts:
+        try:
+            result.append(int(p))
+        except ValueError:
+            result.append(p.upper())
+    return tuple(result)
 
 
 # ── Parser ────────────────────────────────────────────────────────────────────
@@ -106,12 +110,35 @@ def parse_ontario(blocks: list[dict]) -> list[dict]:
                 current_title = None
                 continue
 
+            # Also handle "PART 1 INTRODUCTION" (no separator)
+            part_no_sep_m = re.match(r"^PART\s+(\d+|[IVXLC]+|[A-Z])\s+(.{3,100})$", text, re.IGNORECASE)
+            if part_no_sep_m:
+                flush()
+                current_chapter = _part_to_int(part_no_sep_m.group(1))
+                current_chapter_name = part_no_sep_m.group(2).strip()
+                current_section = None
+                current_title = None
+                continue
+
             # ── Section heading ───────────────────────────────────────────────
             sec_m = SECTION_RE.match(text)
             if sec_m:
                 flush()
                 current_section = sec_m.group(1)
                 current_title = sec_m.group(2).strip() or None
+                current_page = page
+                continue
+
+            # ── Fallback: any other heading starts a named section ────────────
+            # Used for plans that use titled sections instead of numbered ones
+            # (e.g. Thunder Bay Official Plan: "CONTEXT", "BASIS OF THE PLAN")
+            if len(text) <= 120 and text == text.upper():
+                # ALL-CAPS heading with no section number → treat as new section
+                flush()
+                # Generate a synthetic section id from chapter + sequence
+                heading_slug = f"{current_chapter or 0}.h{len(sections) + 1}"
+                current_section = heading_slug
+                current_title = text.title()  # e.g. "Context"
                 current_page = page
                 continue
 
@@ -129,9 +156,8 @@ def parse_ontario(blocks: list[dict]) -> list[dict]:
         # Check if this starts a new numbered section without a heading block
         sec_m = SECTION_RE.match(text)
         if sec_m and btype != "heading":
-            existing_key = _section_key(current_section) if current_section else ()
             new_key = _section_key(sec_m.group(1))
-            # Only treat as a new section if deeper or at same level
+            # Accept multi-part sections (e.g. "1.A.1", "4.2.3") but not bare integers
             if len(new_key) >= 2:
                 flush()
                 current_section = sec_m.group(1)

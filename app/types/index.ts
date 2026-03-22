@@ -6,6 +6,10 @@ export interface Municipality {
   province: string;
   population?: number;
   website?: string;
+  lat?: number;
+  lng?: number;
+  region?: string;
+  document_count?: number;
 }
 
 // ── Bylaw document ────────────────────────────────────────────────────────────
@@ -64,6 +68,7 @@ export interface BylawSearchResult {
 // ── Comparison ────────────────────────────────────────────────────────────────
 
 export interface ComparisonMetric {
+  metric_key: string;
   label: string;
   description: string;
   values: Record<string, string | null>; // municipality_id → value

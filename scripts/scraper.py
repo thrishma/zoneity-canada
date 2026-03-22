@@ -8,10 +8,16 @@ them in the bylaw_documents table for the ingest pipeline.
 Usage:
     python3 scripts/scraper.py [--municipality waterloo-on] [--dry-run]
 
-Supported municipalities:
-    waterloo-on    City of Waterloo
-    kitchener-on   City of Kitchener
-    thunder-bay-on City of Thunder Bay
+Supported municipalities (18 Ontario cities):
+    Waterloo Region:      waterloo-on, kitchener-on, cambridge-on, guelph-on
+    Northwestern ON:      thunder-bay-on
+    Greater Toronto Area: mississauga-on, brampton-on, hamilton-on, markham-on,
+                          richmond-hill-on, barrie-on, oshawa-on
+    Southwestern ON:      london-on, windsor-on
+    National Capital:     ottawa-on
+    Eastern ON:           kingston-on
+    Halton Region:        burlington-on, oakville-on
+    Northern ON:          sudbury-on
 """
 
 import argparse
@@ -41,40 +47,214 @@ DB_URL = os.environ.get("SUPABASE_POSTGRES_TRANSACTION_POOLER") or os.environ.ge
 # pages looking for PDF links that match the bylaw_type patterns.
 
 MUNICIPALITIES: dict[str, list[dict]] = {
+    # ── Waterloo Region ──────────────────────────────────────────────────────
     "waterloo-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.waterloo.ca/en/business/zoning-bylaw.aspx",
-            "pdf_pattern": ["zoning", "bylaw"],
-            "title_hint": "City of Waterloo Zoning By-law",
+            "landing_url": "https://www.waterloo.ca/en/government/zoning-bylaw.aspx",
+            "pdf_pattern": ["zoning", "by-law"],
+            "title_hint": "City of Waterloo Zoning By-law 2018-050",
+            "direct_pdf_url": "https://www.waterloo.ca/media/ybpnbhdm/zoning-by-law-2018-050.pdf",
         },
         {
             "bylaw_type": "official_plan",
             "landing_url": "https://www.waterloo.ca/en/government/official-plan.aspx",
             "pdf_pattern": ["official", "plan"],
             "title_hint": "City of Waterloo Official Plan",
+            "direct_pdf_url": "https://www.waterloo.ca/media/kq3nhow4/city-waterloo-official-plan.pdf",
         },
     ],
     "kitchener-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.kitchener.ca/en/city-services/zoning-bylaw-2019-051.aspx",
-            "pdf_pattern": ["zoning", "bylaw", "2019"],
+            "landing_url": "https://www.kitchener.ca/development-and-construction/zoning/zoning-bylaw/",
+            "pdf_pattern": ["crozby", "signed"],
             "title_hint": "City of Kitchener Zoning By-law 2019-051",
+            "direct_pdf_url": "https://www.kitchener.ca/media/fcwplpb2/dsd_plan_crozby_signed_by-law.pdf",
         },
         {
             "bylaw_type": "official_plan",
-            "landing_url": "https://www.kitchener.ca/en/city-services/official-plan.aspx",
-            "pdf_pattern": ["official", "plan"],
+            "landing_url": "https://www.kitchener.ca/development-and-construction/official-plan/",
+            "pdf_pattern": ["official_plan", "2014"],
             "title_hint": "City of Kitchener Official Plan",
+            "direct_pdf_url": "https://www.kitchener.ca/media/xxanre4z/dsd_plan_city_of_kitchener_official_plan_2014.pdf",
         },
     ],
+    "cambridge-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.cambridge.ca/en/building-and-development/zoning-by-law.aspx",
+            "pdf_pattern": ["zoning", "by-law", "150-16"],
+            "title_hint": "City of Cambridge Zoning By-law 150-16",
+            "direct_pdf_url": "https://www.cambridge.ca/en/building-and-development/resources/Zoning-By-law/ZBL-150-16-MARCH-2024.pdf",
+        },
+    ],
+    "guelph-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://guelph.ca/living/housing-and-neighbourhood/zoning-bylaw/",
+            "pdf_pattern": ["zoning", "bylaw"],
+            "title_hint": "City of Guelph Zoning By-law",
+            "direct_pdf_url": "https://guelph.ca/wp-content/uploads/ZoningBylaw_2023.pdf",
+        },
+        {
+            "bylaw_type": "official_plan",
+            "landing_url": "https://guelph.ca/living/housing-and-neighbourhood/official-plan/",
+            "pdf_pattern": ["official", "plan"],
+            "title_hint": "City of Guelph Official Plan",
+            "direct_pdf_url": "https://guelph.ca/wp-content/uploads/Guelph-Official-Plan-2023.pdf",
+        },
+    ],
+    # ── Northwestern Ontario ─────────────────────────────────────────────────
     "thunder-bay-on": [
         {
             "bylaw_type": "zoning_bylaw",
-            "landing_url": "https://www.thunderbay.ca/en/city-services/zoning.aspx",
-            "pdf_pattern": ["zoning"],
-            "title_hint": "City of Thunder Bay Zoning By-law",
+            "landing_url": "https://www.thunderbay.ca/en/business/find-zoning-and-property-information.aspx",
+            "pdf_pattern": ["zoning", "by-law", "1-2022"],
+            "title_hint": "City of Thunder Bay Zoning By-law 1-2022",
+            "direct_pdf_url": "https://www.thunderbay.ca/en/business/resources/Documents/Building-and-Planning/Zoning/Zoning-By-law-1-2022---Accessible---Office-Consolidation-to-May-27-2024.pdf",
+        },
+        {
+            "bylaw_type": "official_plan",
+            "landing_url": "https://www.thunderbay.ca/en/business/find-zoning-and-property-information.aspx",
+            "pdf_pattern": ["official", "plan"],
+            "title_hint": "City of Thunder Bay Official Plan",
+            "direct_pdf_url": "https://www.thunderbay.ca/en/business/resources/Documents/Building-and-Planning/Official-Plan/Official-Plan---Amended-August-26-2024.pdf",
+        },
+    ],
+    # ── Greater Toronto Area ─────────────────────────────────────────────────
+    "mississauga-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.mississauga.ca/business-in-mississauga/planning-and-development/planning-documents/zoning-by-law/",
+            "pdf_pattern": ["zoning", "by-law", "0225"],
+            "title_hint": "City of Mississauga Zoning By-law 0225-2007",
+            "direct_pdf_url": "https://www.mississauga.ca/media/documents/zoning-by-law-0225-2007-consolidated.pdf",
+        },
+    ],
+    "brampton-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.brampton.ca/EN/Business/LandDev/Zoning/Pages/Zoning-Bylaw.aspx",
+            "pdf_pattern": ["zoning", "by-law"],
+            "title_hint": "City of Brampton Zoning By-law",
+            "direct_pdf_url": "https://www.brampton.ca/EN/Business/LandDev/Zoning/Documents/BramptonZoningBylaw.pdf",
+        },
+    ],
+    "hamilton-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.hamilton.ca/government-information/by-laws-legislation/zoning-by-law",
+            "pdf_pattern": ["zoning", "by-law", "6593"],
+            "title_hint": "City of Hamilton Zoning By-law No. 6593",
+            "direct_pdf_url": "https://www.hamilton.ca/sites/default/files/media/browser/2021-09-14/zoning-bylaw-6593-current.pdf",
+        },
+    ],
+    # ── Southwestern Ontario ─────────────────────────────────────────────────
+    "london-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.london.ca/business-development/planning-development/zoning/zoning-by-law",
+            "pdf_pattern": ["zoning", "z.-1"],
+            "title_hint": "City of London Zoning By-law Z.-1",
+            "direct_pdf_url": "https://www.london.ca/sites/default/files/2022-07/ZoningBylaw-Z-1-August2022.pdf",
+        },
+    ],
+    "windsor-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.citywindsor.ca/residents/buildingandproperty/Pages/Zoning-By-laws.aspx",
+            "pdf_pattern": ["zoning", "by-law"],
+            "title_hint": "City of Windsor Zoning By-law",
+            "direct_pdf_url": "https://www.citywindsor.ca/sites/planning/PlanningDocuments/Zoning-Bylaw-8600.pdf",
+        },
+    ],
+    # ── National Capital Region ──────────────────────────────────────────────
+    "ottawa-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://ottawa.ca/en/planning-development-and-construction/official-plan/new-official-plan",
+            "pdf_pattern": ["zoning", "by-law", "2008-250"],
+            "title_hint": "City of Ottawa Zoning By-law 2008-250",
+            "direct_pdf_url": "https://ottawa.ca/sites/default/files/2023-04/zoning-bylaw-2008-250-consolidation.pdf",
+        },
+    ],
+    # ── Eastern Ontario ──────────────────────────────────────────────────────
+    "kingston-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.cityofkingston.ca/city-government/policies-by-laws-and-fees/by-laws/zoning-by-law",
+            "pdf_pattern": ["zoning", "by-law"],
+            "title_hint": "City of Kingston Zoning By-law",
+            "direct_pdf_url": "https://www.cityofkingston.ca/documents/10180/13248959/Kingston+Zoning+By-Law+2022-67+Consolidated.pdf",
+        },
+    ],
+    # ── Halton Region ────────────────────────────────────────────────────────
+    "burlington-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.burlington.ca/en/services-for-you/zoning.aspx",
+            "pdf_pattern": ["zoning", "by-law", "2020"],
+            "title_hint": "City of Burlington Zoning By-law 2020",
+            "direct_pdf_url": "https://www.burlington.ca/en/services-for-you/resources/Zoning/2020-Comprehensive-Zoning-Bylaw.pdf",
+        },
+    ],
+    "oakville-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.oakville.ca/business-development/planning-zoning/zoning-by-law/",
+            "pdf_pattern": ["zoning", "by-law", "2014-014"],
+            "title_hint": "Town of Oakville Zoning By-law 2014-014",
+            "direct_pdf_url": "https://www.oakville.ca/assets/2014_plan/zoning_bylaw_2014-014_consolidated.pdf",
+        },
+    ],
+    # ── York Region ──────────────────────────────────────────────────────────
+    "markham-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.markham.ca/wps/portal/home/business/planning-and-development/development-services/zoning/",
+            "pdf_pattern": ["zoning", "by-law", "304-87"],
+            "title_hint": "City of Markham Zoning By-law 304-87",
+            "direct_pdf_url": "https://www.markham.ca/wps/wcm/connect/markham/documents/zoning-bylaw-304-87-consolidated.pdf",
+        },
+    ],
+    "richmond-hill-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.richmondhill.ca/en/build-and-invest/zoning-bylaw.aspx",
+            "pdf_pattern": ["zoning", "bylaw"],
+            "title_hint": "Town of Richmond Hill Zoning By-law",
+            "direct_pdf_url": "https://www.richmondhill.ca/en/build-and-invest/resources/Documents/Zoning-By-law-Consolidated.pdf",
+        },
+    ],
+    # ── Simcoe County ────────────────────────────────────────────────────────
+    "barrie-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.barrie.ca/city-hall/planning-and-development/zoning-by-law",
+            "pdf_pattern": ["zoning", "by-law", "2009"],
+            "title_hint": "City of Barrie Zoning By-law 2009-141",
+            "direct_pdf_url": "https://www.barrie.ca/sites/default/files/uploads/Planning/ZBL_2009-141_Consolidated.pdf",
+        },
+    ],
+    # ── Durham Region ────────────────────────────────────────────────────────
+    "oshawa-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.oshawa.ca/city-hall/zoning-by-law.asp",
+            "pdf_pattern": ["zoning", "by-law", "60-94"],
+            "title_hint": "City of Oshawa Zoning By-law 60-94",
+            "direct_pdf_url": "https://www.oshawa.ca/city-hall/resources/Zoning-By-law-60-94-Consolidated.pdf",
+        },
+    ],
+    # ── Northern Ontario ─────────────────────────────────────────────────────
+    "sudbury-on": [
+        {
+            "bylaw_type": "zoning_bylaw",
+            "landing_url": "https://www.greatersudbury.ca/city-hall/by-laws/zoning-by-law/",
+            "pdf_pattern": ["zoning", "by-law", "2010-100z"],
+            "title_hint": "City of Greater Sudbury Zoning By-law 2010-100Z",
+            "direct_pdf_url": "https://www.greatersudbury.ca/media/documents/planning/Zoning-By-law-2010-100Z-Consolidated.pdf",
         },
     ],
 }
@@ -213,13 +393,17 @@ def scrape_municipality(
 
         pdf_urls = find_pdf_links(resp.text, entry["landing_url"], entry["pdf_pattern"])
         if not pdf_urls:
-            print(f"  Warning: no PDF links found matching {entry['pdf_pattern']}")
-            continue
+            if entry.get("direct_pdf_url"):
+                print(f"  No pattern match — using direct_pdf_url")
+                pdf_urls = [entry["direct_pdf_url"]]
+            else:
+                print(f"  Warning: no PDF links found matching {entry['pdf_pattern']}")
+                continue
 
         print(f"  Found {len(pdf_urls)} PDF candidate(s): {pdf_urls[:3]}")
 
-        # Download the first (most prominent) match
-        pdf_url = pdf_urls[0]
+        # Prefer direct_pdf_url if specified (avoids stale pattern matches)
+        pdf_url = entry.get("direct_pdf_url") or pdf_urls[0]
         filename = Path(urlparse(pdf_url).path).name or "bylaw.pdf"
         dest = DOWNLOAD_DIR / municipality_id / entry["bylaw_type"] / filename
 
