@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { OpenAIEmbeddings } from "@langchain/openai";
 import pool from "@/lib/db";
 import { withCache } from "@/lib/cache";
 import type { BylawSearchResult } from "@/types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const embeddings = new OpenAIEmbeddings({
+  model: "text-embedding-3-small",
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-const EMBEDDING_MODEL = "text-embedding-3-small";
 const DEFAULT_LIMIT = 8;
 const SIMILARITY_THRESHOLD = 0.3;
 
 async function embedQuery(text: string): Promise<number[]> {
-  const resp = await openai.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: text.trim(),
-  });
-  return resp.data[0].embedding;
+  return embeddings.embedQuery(text.trim());
 }
 
 export async function GET(req: NextRequest) {
