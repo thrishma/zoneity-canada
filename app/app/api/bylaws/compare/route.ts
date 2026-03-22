@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const ids = searchParams.getAll("id");
 
-  if (ids.length < 2) {
+  if (ids.length < 1) {
     return NextResponse.json(
-      { error: "Provide at least 2 municipality ids via ?id=...&id=..." },
+      { error: "Provide at least 1 municipality id via ?id=..." },
       { status: 400 }
     );
   }
