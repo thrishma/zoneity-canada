@@ -140,17 +140,25 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encode({ type: "status", content: toolName }));
           }
 
-          // Stream LLM tokens for the final answer only (not tool calls)
-          if (
-            event.event === "on_chat_model_stream" &&
-            event.data?.chunk?.content &&
-            event.tags?.includes("seq:step:2")
-          ) {
-            const token = typeof event.data.chunk.content === "string"
-              ? event.data.chunk.content
-              : event.data.chunk.content[0]?.text ?? "";
+          // Stream LLM tokens — skip tool-call chunks (they have no string content)
+          if (event.event === "on_chat_model_stream") {
+            const raw = event.data?.chunk?.content;
+            const token =
+              typeof raw === "string"
+                ? raw
+                : Array.isArray(raw) && typeof raw[0]?.text === "string"
+                ? raw[0].text
+                : "";
             if (token) {
               controller.enqueue(encode({ type: "token", content: token }));
+            }
+          }
+
+          // Fallback: capture full output from agent finish if no tokens streamed
+          if (event.event === "on_chain_end" && event.name === "AgentExecutor") {
+            const output = event.data?.output?.output;
+            if (typeof output === "string" && output) {
+              controller.enqueue(encode({ type: "fallback", content: output }));
             }
           }
         }

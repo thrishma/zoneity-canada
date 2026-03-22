@@ -180,7 +180,7 @@ export default function BylawSearch() {
         for (const line of lines) {
           try {
             const payload = JSON.parse(line.slice(6)) as {
-              type: "token" | "status" | "done" | "error";
+              type: "token" | "status" | "done" | "error" | "fallback";
               content: string;
             };
 
@@ -189,6 +189,10 @@ export default function BylawSearch() {
             } else if (payload.type === "token") {
               accumulated += payload.content;
               setChatAnswer(accumulated);
+              setChatStatus(null);
+            } else if (payload.type === "fallback" && !accumulated) {
+              // fallback: streaming didn't yield tokens, use full output
+              setChatAnswer(payload.content);
               setChatStatus(null);
             } else if (payload.type === "done") {
               setChatStatus(null);
