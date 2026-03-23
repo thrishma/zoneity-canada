@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoneity Canada — Project Brief</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #111827;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      border-bottom: 2px solid #111827;
+      padding-bottom: 28px;
+      margin-bottom: 36px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #111827;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .tagline {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 400;
+      margin-bottom: 20px;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .meta-item strong {
+      color: #111827;
+      font-weight: 600;
+    }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 36px;
+    }
+
+    h2 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 6px;
+      margin-top: 18px;
+    }
+
+    h3:first-of-type { margin-top: 0; }
+
+    p {
+      color: #374151;
+      margin-bottom: 10px;
+    }
+
+    /* ── Callout ── */
+    .callout {
+      background: #f9fafb;
+      border-left: 3px solid #111827;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #111827;
+    }
+
+    /* ── Stats row ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #111827;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* ── Feature grid ── */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .feature {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .feature-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 5px;
+    }
+
+    .feature-desc {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    thead tr {
+      background: #f9fafb;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #374151;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* ── Stack pills ── */
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .pill {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Architecture diagram ── */
+    .arch {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #374151;
+      line-height: 1.8;
+      white-space: pre;
+    }
+
+    /* ── Impact ── */
+    .impact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .impact-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .impact-who {
+      font-size: 12px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .impact-what {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    /* ── Roadmap ── */
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .phase {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .phase-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .phase-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .phase ul {
+      padding-left: 14px;
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .footer-right {
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: right;
+    }
+
+    @media print {
+      body { padding: 32px; }
+      .stats { break-inside: avoid; }
+      .features { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">Hackathon Submission — Waterloo Region 2026</div>
+    <h1>Zoneity Canada</h1>
+    <p class="tagline">National Municipal Zoning Intelligence for Canada</p>
+    <div class="meta-row">
+      <div class="meta-item"><strong>Category:</strong> Civic Tech / Housing Policy</div>
+      <div class="meta-item"><strong>Stage:</strong> Working Prototype</div>
+      <div class="meta-item"><strong>Region:</strong> Ontario — 18 Municipalities</div>
+      <div class="meta-item"><strong>GitHub:</strong> github.com/thrishma/zoneity-canada</div>
+    </div>
+  </div>
+
+  <!-- Problem -->
+  <section>
+    <h2>The Problem</h2>
+    <div class="callout">
+      <p>Canada's housing crisis is partly a zoning crisis — but zoning bylaws are buried in hundreds of dense PDFs across dozens of municipalities, with no standard format, no searchability, and no easy way to compare rules across cities. The people who most need this information — housing advocates, developers, planners, journalists — have no good tools to access it.</p>
+    </div>
+    <p>A developer assessing a site in Kitchener vs. Waterloo needs to read two different 400-page PDFs to find out whether a multiplex is permitted, what the height limit is, or how much parking is required. A housing researcher comparing secondary suite rules across Ontario must manually scan bylaw after bylaw.</p>
+    <p>There is no national equivalent of a zoning lookup tool for Canada. Zoneity is that tool.</p>
+  </section>
+
+  <!-- Stats -->
+  <section>
+    <h2>By the Numbers</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number">18</div>
+        <div class="stat-label">Ontario Municipalities</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">167k+</div>
+        <div class="stat-label">Open Data Features</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">32,896</div>
+        <div class="stat-label">Building Permits</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">6</div>
+        <div class="stat-label">Key Zoning Metrics Extracted</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution -->
+  <section>
+    <h2>The Solution</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-title">Semantic Bylaw Search</div>
+        <p class="feature-desc">Ask plain-English questions across indexed bylaw text. Results ranked by vector similarity — finds the right clause even when exact wording differs.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Structured Metric Extraction</div>
+        <p class="feature-desc">Key zoning values extracted from PDFs automatically using regex + GPT-4o: lot size, height, parking, density, secondary suites, multiplexes.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Municipality Comparison</div>
+        <p class="feature-desc">Side-by-side table of zoning metrics across up to 4 municipalities. Instantly see where regulations are more or less permissive.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-title">AI Chat Agent</div>
+        <p class="feature-desc">LangChain agent with 3 tools: structured metrics, bylaw text search, and open data queries. Answers cite specific bylaw sections.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Waterloo Open Data Integration</div>
+        <p class="feature-desc">167k+ features from data.waterloo.ca: building permits, planning communities, neighbourhood associations, landmarks, address proximity.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Community Submissions</div>
+        <p class="feature-desc">Users submit bylaw PDFs not yet indexed. Admin review queue triggers ingestion pipeline — crowdsourced national coverage expansion.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Data -->
+  <section>
+    <h2>Waterloo Open Data — Ingested Datasets</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Dataset</th>
+          <th>Source</th>
+          <th>Records</th>
+          <th>Key Fields</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Building Permits</strong></td>
+          <td>City of Waterloo</td>
+          <td>32,896</td>
+          <td>Address, Status, Issue Year, Permit Type</td>
+        </tr>
+        <tr>
+          <td><strong>Planning Communities</strong></td>
+          <td>City of Kitchener</td>
+          <td>55</td>
+          <td>Community Name, ID, Census ID</td>
+        </tr>
+        <tr>
+          <td><strong>Neighbourhood Associations</strong></td>
+          <td>City of Waterloo</td>
+          <td>45</td>
+          <td>Name, Website, Boundaries</td>
+        </tr>
+        <tr>
+          <td><strong>Landmarks</strong></td>
+          <td>City of Kitchener</td>
+          <td>1,971</td>
+          <td>Name, Category, Subcategory, Address</td>
+        </tr>
+        <tr>
+          <td><strong>Address Proximity Directory</strong></td>
+          <td>City of Kitchener</td>
+          <td>132,327</td>
+          <td>Nearest Park, School, Services per Address</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px; color:#9ca3af; margin-top:8px;">All data sourced from data.waterloo.ca under the City of Waterloo Open Data License. Ingested via ArcGIS FeatureServer REST API with full pagination and upsert-safe deduplication.</p>
+  </section>
+
+  <!-- Architecture -->
+  <section>
+    <h2>Technical Architecture</h2>
+    <div class="arch">Municipal Websites + data.waterloo.ca
+         |                    |
+    scraper.py          ingest_open_data.py
+    (PDF discovery)     (ArcGIS REST API)
+         |                    |
+    bylaw_documents     open_data_features
+         |              (JSONB + GIN index)
+    ingest.py
+    (Docling PDF → chunks → OpenAI embeddings → metrics)
+         |
+    bylaw_sections          bylaw_metrics
+    (pgvector 1536-dim)     (6 key values)
+         |                    |
+         └──────┬─────────────┘
+                |
+         Next.js API Routes
+         /api/bylaws/search    → vector similarity
+         /api/bylaws/compare   → structured metrics
+         /api/open-data        → JSONB filtering + aggregation
+         /api/chat             → LangChain agent (streaming SSE)
+                |
+         React Frontend (Next.js 16, Tailwind 4, React Leaflet)</div>
+
+    <div class="pills" style="margin-top: 16px;">
+      <span class="pill">Next.js 16</span>
+      <span class="pill">TypeScript</span>
+      <span class="pill">Tailwind CSS 4</span>
+      <span class="pill">Supabase (PostgreSQL)</span>
+      <span class="pill">pgvector</span>
+      <span class="pill">LangChain</span>
+      <span class="pill">GPT-4o</span>
+      <span class="pill">text-embedding-3-small</span>
+      <span class="pill">Docling</span>
+      <span class="pill">Python 3.12</span>
+      <span class="pill">ArcGIS REST API</span>
+      <span class="pill">React Leaflet</span>
+    </div>
+  </section>
+
+  <!-- Metric Extraction -->
+  <section>
+    <h2>Metric Extraction Pipeline</h2>
+    <p>Zoneity extracts 6 structured zoning metrics from every ingested bylaw PDF using a two-stage pipeline designed to maximize coverage while minimizing LLM cost:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Description</th>
+          <th>Extraction Method</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Minimum Lot Size</td>
+          <td>Smallest residential lot in base R-1 zone (sqm)</td>
+          <td>Regex → LLM fallback</td>
+        </tr>
+        <tr>
+          <td>Max Building Height</td>
+          <td>Maximum height in residential zones (metres)</td>
+          <td>Regex → LLM fallback</td>
+        </tr>
+        <tr>
+          <td>Min Parking per Unit</td>
+          <td>Required parking spaces per dwelling unit</td>
+          <td>Regex → LLM fallback</td>
+        </tr>
+        <tr>
+          <td>Secondary Suites Permitted</td>
+          <td>Whether in-law suites are permitted as-of-right</td>
+          <td>Semantic search + GPT-4o</td>
+        </tr>
+        <tr>
+          <td>Multiplex (4+ units) Permitted</td>
+          <td>Whether 4+ unit buildings are permitted in residential zones</td>
+          <td>Semantic search + GPT-4o</td>
+        </tr>
+        <tr>
+          <td>Max Density</td>
+          <td>Maximum residential density in medium-density zones (units/ha)</td>
+          <td>Regex → LLM fallback</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Impact -->
+  <section>
+    <h2>Who It Serves</h2>
+    <div class="impact-grid">
+      <div class="impact-card">
+        <div class="impact-who">Housing Advocates</div>
+        <div class="impact-what">Quickly identify which municipalities have the most restrictive zoning rules — and build evidence for policy reform.</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-who">Developers & Planners</div>
+        <div class="impact-what">Look up permit requirements, height limits, and parking rules for specific sites across cities without reading full PDFs.</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-who">Journalists & Researchers</div>
+        <div class="impact-what">Compare zoning regulations across municipalities with cited sources — find stories in the data about housing supply barriers.</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-who">Municipal Staff</div>
+        <div class="impact-what">Benchmark their own bylaws against peer municipalities. Identify areas where regulations may lag best practices.</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-who">Citizens</div>
+        <div class="impact-what">Understand what's allowed in their neighbourhood — whether a secondary suite is possible, what the height rules are.</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-who">Policy Makers</div>
+        <div class="impact-what">Track development permit trends over time and connect zoning rules to actual permit activity on the ground.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section>
+    <h2>Roadmap</h2>
+    <div class="roadmap">
+      <div class="phase">
+        <div class="phase-label">Now — Prototype</div>
+        <div class="phase-title">Ontario Foundation</div>
+        <ul>
+          <li>18 Ontario municipalities</li>
+          <li>Semantic search + metrics</li>
+          <li>AI chat agent</li>
+          <li>Waterloo open data (167k rows)</li>
+          <li>Community submissions</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Next — Expansion</div>
+        <div class="phase-title">National Coverage</div>
+        <ul>
+          <li>All Ontario municipalities</li>
+          <li>BC and Alberta cities</li>
+          <li>Amendment tracking</li>
+          <li>Map-based zoning explorer</li>
+          <li>More open data sources</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Future — Platform</div>
+        <div class="phase-title">Intelligence Layer</div>
+        <ul>
+          <li>Zoning change alerts</li>
+          <li>Developer site reports</li>
+          <li>Policy impact modeling</li>
+          <li>Public API access</li>
+          <li>Municipal dashboard</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      Zoneity Canada — Waterloo Region Hackathon 2026<br/>
+      github.com/thrishma/zoneity-canada
+    </div>
+    <div class="footer-right">
+      Data: data.waterloo.ca (CC-BY)<br/>
+      Built with Next.js, Supabase, LangChain, OpenAI
+    </div>
+  </div>
+
+</body>
+</html>
