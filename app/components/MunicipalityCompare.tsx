@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Municipality, ComparisonMetric } from "@/types";
 
-const DEFAULT_MUNICIPALITIES = ["waterloo-on", "kitchener-on"];
+const DEFAULT_MUNICIPALITIES = ["thunder-bay-on", "waterloo-on"];
 
 function ValueCell({ value, metricKey }: { value: string | null | undefined; metricKey: string }) {
   if (value == null) {

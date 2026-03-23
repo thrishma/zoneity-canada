@@ -13,11 +13,19 @@ and land use regulations across Canadian municipalities.
 RULES:
 - For questions about specific regulation values (lot size, height, parking, density, secondary suites, multiplexes), ALWAYS call get_structured_metrics FIRST. It returns precise extracted values directly from bylaws.
 - Use search_bylaws for specific clause wording, conditions, exceptions, or topics not covered by structured metrics.
+- Use query_open_data for questions about: building permits, neighbourhood associations, planning communities, landmarks (schools/parks/services), and address-level amenity proximity.
 - Cite the source (municipality, bylaw name) inline after every regulation value.
 - If the question involves multiple municipalities, call get_structured_metrics with all relevant IDs and compare.
 - Never fabricate regulation values — if the data shows null/MISSING, say the data was not found in the indexed sections.
 - Be concise but thorough. Planners and researchers need precise, citable answers.
 - When comparing municipalities, use a markdown table.
+
+OPEN DATA DATASETS (data.waterloo.ca):
+- building_permits: City of Waterloo building permits — filter by STATUS, ISSUE_YEAR, PERMITTYPE, ADDRESS. Aggregate by ISSUE_YEAR or STATUS.
+- planning_communities: Kitchener planning community boundaries — 55 communities, fields: PLANNING_COMMUNITY, PLANNINGCOMMUNITYID.
+- neighbourhood_assoc: City of Waterloo neighbourhood associations — 45 neighbourhoods, fields: NAME, WEBSITE.
+- landmarks: Kitchener landmarks — fields: LANDMARK (name), CATEGORY, SUBCATEGORY, STREET, CIVIC_NO. Key CATEGORY values: "PARK", "EDUCATION FACILITY", "EMERGENCY SERVICE", "GOVERNMENT SERVICE", "PLAYGROUND", "PLACE OF WORSHIP", "POINT OF INTEREST", "LIBRARY", "SPORTS SOCCER" etc.
+- address_proximity: Kitchener address proximity — nearest park/school/etc per address — fields: ADDRESS, NEAREST_PARK, NEAREST_ELEMENTARY_SCHOOL.
 
 CITATION FORMAT: *(City of [Municipality], [Bylaw Name], s.[X.X])*`;
 
@@ -98,6 +106,56 @@ export async function POST(req: NextRequest) {
     }
   );
 
+  const queryOpenData = tool(
+    async ({ dataset, municipality, filters, aggregate, limit }: {
+      dataset: string;
+      municipality?: string;
+      filters?: Record<string, string>;
+      aggregate?: string;
+      limit?: number;
+    }) => {
+      const params = new URLSearchParams({ dataset });
+      if (municipality) params.set("municipality", municipality);
+      if (aggregate) params.set("aggregate", aggregate);
+      if (limit) params.set("limit", String(Math.min(limit, 50)));
+      for (const [key, value] of Object.entries(filters ?? {})) {
+        params.set(`filter[${key}]`, value);
+      }
+      const data = await fetch(`${base}/api/open-data?${params}`).then((r) => r.json()) as {
+        total?: number;
+        features?: unknown[];
+        buckets?: unknown[];
+        aggregate?: string;
+      };
+      // Return summary to keep context manageable
+      if (data.buckets) {
+        return JSON.stringify({ aggregate: data.aggregate, buckets: data.buckets });
+      }
+      return JSON.stringify({
+        total: data.total,
+        sample: (data.features ?? []).slice(0, 10),
+      });
+    },
+    {
+      name: "query_open_data",
+      description:
+        "Query open datasets from data.waterloo.ca: building_permits, planning_communities, neighbourhood_assoc, landmarks, address_proximity. Use aggregate to count records by a property (e.g. ISSUE_YEAR, STATUS). Use filters to narrow results by property values.",
+      schema: z.object({
+        dataset: z
+          .enum(["building_permits", "planning_communities", "neighbourhood_assoc", "landmarks", "address_proximity"])
+          .describe("Which dataset to query"),
+        municipality: z.string().optional().describe("e.g. 'waterloo-on' or 'kitchener-on'"),
+        filters: z.record(z.string(), z.string()).optional().describe(
+          "Property key=value filters e.g. { STATUS: 'Issued', ISSUE_YEAR: '2023' }"
+        ),
+        aggregate: z.string().optional().describe(
+          "Property key to group and count by, e.g. 'ISSUE_YEAR' or 'STATUS'"
+        ),
+        limit: z.number().optional().describe("Max records to return (max 50)"),
+      }),
+    }
+  );
+
   const llm = new ChatOpenAI({
     model: "gpt-4o",
     temperature: 0,
@@ -113,14 +171,14 @@ export async function POST(req: NextRequest) {
 
   const agent = await createOpenAIToolsAgent({
     llm,
-    tools: [getStructuredMetrics, searchBylaws],
+    tools: [getStructuredMetrics, searchBylaws, queryOpenData],
     prompt,
   });
 
   const executor = new AgentExecutor({
     agent,
-    tools: [getStructuredMetrics, searchBylaws],
-    maxIterations: 4,
+    tools: [getStructuredMetrics, searchBylaws, queryOpenData],
+    maxIterations: 5,
   });
 
   const stream = new ReadableStream({
@@ -134,9 +192,12 @@ export async function POST(req: NextRequest) {
         for await (const event of eventStream) {
           // Tool call status — show the user what the agent is doing
           if (event.event === "on_tool_start") {
-            const toolName = event.name === "get_structured_metrics"
-              ? "Fetching zoning metrics..."
-              : "Searching bylaws...";
+            const statusMap: Record<string, string> = {
+              get_structured_metrics: "Fetching zoning metrics...",
+              search_bylaws: "Searching bylaws...",
+              query_open_data: "Querying open data...",
+            };
+            const toolName = statusMap[event.name] ?? "Working...";
             controller.enqueue(encode({ type: "status", content: toolName }));
           }
 

@@ -90,3 +90,31 @@ export interface ChatResponse {
     snippet: string;
   }>;
 }
+
+// ── Open Data (data.waterloo.ca) ───────────────────────────────────────────
+
+export type OpenDataDataset =
+  | "building_permits"
+  | "planning_communities"
+  | "neighbourhood_assoc"
+  | "landmarks"
+  | "address_proximity";
+
+export interface OpenDataFeature {
+  id: string;
+  dataset_name: OpenDataDataset;
+  dataset_label: string;
+  municipality: string;
+  feature_id: string | null;
+  properties: Record<string, unknown>;
+  geometry: { type: string; coordinates: unknown } | null;
+  ingested_at: string;
+}
+
+export interface OpenDataQueryResult {
+  dataset: string;
+  total: number;
+  limit: number;
+  offset: number;
+  features: OpenDataFeature[];
+}
